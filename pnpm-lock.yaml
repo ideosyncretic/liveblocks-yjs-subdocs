@@ -11,6 +11,9 @@ importers:
       '@liveblocks/client':
         specifier: ^1.12.0
         version: 1.12.0
+      '@liveblocks/core':
+        specifier: ^1.12.0
+        version: 1.12.0
       '@liveblocks/react':
         specifier: ^1.12.0
         version: 1.12.0(react@18.3.1)
