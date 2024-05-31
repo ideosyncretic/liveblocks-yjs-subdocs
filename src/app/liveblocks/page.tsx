@@ -120,7 +120,7 @@ function Sandbox() {
           </Table.Tr>
           <Table.Tr id="sync">
             <Table.Td>Root Doc Synced</Table.Td>
-            <Table.Td>{synced}</Table.Td>
+            <Table.Td>{JSON.stringify(synced)}</Table.Td>
           </Table.Tr>
         </Table.Tbody>
       </Table>
