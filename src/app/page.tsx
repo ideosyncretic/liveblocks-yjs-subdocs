@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import type { BaseUserMeta } from "@liveblocks/core";
+import { useEffect, useState } from "react";
 
 // import "./styles.css";
 
@@ -49,7 +50,7 @@ const initialList = new LiveObject({
   cards: new LiveList([initialCard]),
 });
 
-// Board
+// List
 const initialStorage = {
   lists: new LiveList([initialList]),
 };
@@ -107,16 +108,18 @@ const Editor = ({
 };
 
 function App() {
+  // const doc = useMemo(() => new Y.Doc(), []);
   const room = useRoom();
   const [doc, setDoc] = useState<Y.Doc>();
-  const [provider, setProvider] = useState<unknown>();
+  const [provider, setProvider] =
+    useState<LiveblocksProvider<never, never, BaseUserMeta, never>>();
 
   // Liveblocks Storage
   const lists = useStorage((root) => root.lists);
 
   useEffect(() => {
     // Initialize Yjs and Liveblocks Provider
-    const yDoc = new Y.Doc(); // For the Project
+    const yDoc = new Y.Doc();
     const yProvider = new LiveblocksProvider(room, yDoc, {
       autoloadSubdocs: false,
     });
@@ -128,16 +131,18 @@ function App() {
 
     // Init YDoc for syncing with Liveblocks Yjs based on Liveblocks Storage
     lists?.forEach((list) => {
-      // Init list subdoc
-      const yBoardSubdoc = new Y.Doc();
-      // Make fragments for Cards
+      // Init List subdoc
+      const yListSubdoc = new Y.Doc();
+
+      // Make fragments for List's Cards
       list.cards.forEach((card) => {
-        yBoardSubdoc.get(`title_${card.id}`, Y.XmlFragment);
-        yBoardSubdoc.get(`description_${card.id}`, Y.XmlFragment);
+        yListSubdoc.get(`title_${card.id}`, Y.XmlFragment);
+        yListSubdoc.get(`description_${card.id}`, Y.XmlFragment);
       });
-      // Save Board subdoc into Boards map
-      const yBoardsMap = yDoc.getMap("lists");
-      yBoardsMap.set(list.id, yBoardSubdoc);
+
+      // Save List subdoc into Lists map
+      const yListsMap = yDoc.getMap("lists");
+      yListsMap.set(list.id, yListSubdoc);
     });
 
     return () => {
@@ -171,11 +176,9 @@ function App() {
 
               <h4>Cards</h4>
               {list.cards?.map((card) => {
-                const yBoardsMap = doc.get("lists") as Y.Map<Y.Doc>;
-                const yBoardSubdoc = yBoardsMap.get(
-                  lists[0].id
-                ) as Y.Doc | null;
-                if (!yBoardSubdoc) {
+                const yListsMap = doc.getMap("lists");
+                const yListSubdoc = yListsMap.get(lists[0].id) as Y.Doc | null;
+                if (!yListSubdoc) {
                   return null;
                 }
                 return (
@@ -185,7 +188,7 @@ function App() {
                       <b>Title</b>
                       <Editor
                         fragment={
-                          yBoardSubdoc.get(`title_${card.id}`) as Y.XmlFragment
+                          yListSubdoc.get(`title_${card.id}`) as Y.XmlFragment
                         }
                         provider={provider}
                         placeholder="Title here"
@@ -195,7 +198,7 @@ function App() {
                       <b>Description</b>
                       <Editor
                         fragment={
-                          yBoardSubdoc.get(
+                          yListSubdoc.get(
                             `description_${card.id}`
                           ) as Y.XmlFragment
                         }
