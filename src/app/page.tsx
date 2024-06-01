@@ -62,8 +62,7 @@ export default function DemoPage() {
     <RoomProvider
       id={roomID}
       initialPresence={{}}
-      initialStorage={initialStorage}
-    >
+      initialStorage={initialStorage}>
       <ClientSideSuspense fallback="Loading...">
         {() => <App />}
       </ClientSideSuspense>
@@ -121,28 +120,54 @@ function App() {
     // Initialize Yjs and Liveblocks Provider
     const yDoc = new Y.Doc();
     const yProvider = new LiveblocksProvider(room, yDoc, {
-      autoloadSubdocs: false,
+      autoloadSubdocs: true,
     });
-
     setDoc(yDoc);
     setProvider(yProvider);
 
+    // Initialize top-level shared fragment
     yDoc.get("title", Y.XmlFragment);
 
-    // Init YDoc for syncing with Liveblocks Yjs based on Liveblocks Storage
+    // Create a top-level map to store subdocs
+    const yListsMap = yDoc.getMap("lists");
+
+    // Create subdocument for each List in Liveblocks Storage
     lists?.forEach((list) => {
       // Init List subdoc
       const yListSubdoc = new Y.Doc();
 
-      // Make fragments for List's Cards
-      list.cards.forEach((card) => {
-        yListSubdoc.get(`title_${card.id}`, Y.XmlFragment);
-        yListSubdoc.get(`description_${card.id}`, Y.XmlFragment);
-      });
-
-      // Save List subdoc into Lists map
-      const yListsMap = yDoc.getMap("lists");
       yListsMap.set(list.id, yListSubdoc);
+
+      // TODO: Should we take note of GUID in Liveblocks Storage? And then load it based on that reference
+      // // Doesn’t seem to work
+      // const subdocGuid = yListSubdoc.guid;
+      // yProvider.loadSubdoc(subdocGuid);
+
+      // TODO: OR should we just load it based on its reference?
+      // Doesn’t seem to work
+      // yListSubdoc.load();
+
+      console.log("Subdoc in useEffect:", yListSubdoc.guid);
+
+      // Make fragments for List's Cards
+      lists?.forEach((list) => {
+        list.cards.forEach((card) => {
+          yListSubdoc.get(`title_${card.id}`, Y.XmlFragment);
+          yListSubdoc.get(`description_${card.id}`, Y.XmlFragment);
+        });
+      });
+    });
+
+    yDoc.on("subdocs", ({ added, loaded, removed }) => {
+      added.forEach((subdoc) => {
+        console.log("Added subdoc", subdoc.guid);
+      });
+      loaded.forEach((subdoc) => {
+        console.log("Loaded subdoc", subdoc.guid);
+      });
+      removed.forEach((subdoc) => {
+        console.log("Removed subdoc", subdoc.guid);
+      });
     });
 
     return () => {
@@ -178,6 +203,8 @@ function App() {
               {list.cards?.map((card) => {
                 const yListsMap = doc.getMap("lists");
                 const yListSubdoc = yListsMap.get(lists[0].id) as Y.Doc | null;
+                console.log("Rendering subdoc:", yListSubdoc?.guid);
+
                 if (!yListSubdoc) {
                   return null;
                 }
