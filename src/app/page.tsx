@@ -113,6 +113,8 @@ function App() {
   const [provider, setProvider] =
     useState<LiveblocksProvider<never, never, BaseUserMeta, never>>();
 
+  const [synced, setSynced] = useState(false);
+
   // Liveblocks Storage
   const lists = useStorage((root) => root.lists);
 
@@ -125,6 +127,10 @@ function App() {
     setDoc(yDoc);
     setProvider(yProvider);
 
+    yProvider.on("sync", () => {
+      setSynced(true); // Triggers a rerender. Subdocs wouldn't be able to be loaded in time for rendering otherwise
+    });
+
     // Initialize top-level shared fragment
     yDoc.get("title", Y.XmlFragment);
 
@@ -136,26 +142,21 @@ function App() {
       // Init List subdoc
       const yListSubdoc = new Y.Doc();
 
-      yListsMap.set(list.id, yListSubdoc);
+      // yListsMap.set(list.id, yListSubdoc);
 
       // TODO: Should we take note of GUID in Liveblocks Storage? And then load it based on that reference
       // // Doesn’t seem to work
       // const subdocGuid = yListSubdoc.guid;
       // yProvider.loadSubdoc(subdocGuid);
 
-      // TODO: OR should we just load it based on its reference?
+      // NOTE: OR should we just load it based on its reference?
       // Doesn’t seem to work
       // yListSubdoc.load();
 
-      console.log("Subdoc in useEffect:", yListSubdoc.guid);
+      // NOTE: This doesn’t work for some reason, doesn’t trigger a load event. Only autoload works. Why?
+      // yProvider.loadSubdoc("8b772c15-57a1-49d7-a237-636e1e96a6e8");
 
-      // Make fragments for List's Cards
-      lists?.forEach((list) => {
-        list.cards.forEach((card) => {
-          yListSubdoc.get(`title_${card.id}`, Y.XmlFragment);
-          yListSubdoc.get(`description_${card.id}`, Y.XmlFragment);
-        });
-      });
+      console.log("Subdoc in useEffect:", yListSubdoc.guid);
     });
 
     yDoc.on("subdocs", ({ added, loaded, removed }) => {
@@ -171,6 +172,7 @@ function App() {
     });
 
     return () => {
+      setSynced(false);
       yDoc?.destroy();
       yProvider?.destroy();
     };
@@ -179,6 +181,12 @@ function App() {
   if (!doc || !provider) {
     return null;
   }
+
+  // TODO Wait for subdocs to load and sync
+  const yListsMap = doc.getMap("lists");
+  console.log("yListsMap", yListsMap);
+  const yListSubdoc = yListsMap.get(lists[0].id) as Y.Doc | null;
+  console.log("Rendering subdoc:", yListSubdoc?.guid);
 
   return (
     <main>
@@ -201,38 +209,34 @@ function App() {
 
               <h4>Cards</h4>
               {list.cards?.map((card) => {
-                const yListsMap = doc.getMap("lists");
-                const yListSubdoc = yListsMap.get(lists[0].id) as Y.Doc | null;
-                console.log("Rendering subdoc:", yListSubdoc?.guid);
-
-                if (!yListSubdoc) {
-                  return null;
-                }
                 return (
                   <Card key={card.id} withBorder>
                     <h5>Card ID: {card.id}</h5>
-                    <Stack mt="lg" gap={0}>
-                      <b>Title</b>
-                      <Editor
-                        fragment={
-                          yListSubdoc.get(`title_${card.id}`) as Y.XmlFragment
-                        }
-                        provider={provider}
-                        placeholder="Title here"
-                      />
-                    </Stack>
-                    <Stack gap={0}>
-                      <b>Description</b>
-                      <Editor
-                        fragment={
-                          yListSubdoc.get(
-                            `description_${card.id}`
-                          ) as Y.XmlFragment
-                        }
-                        provider={provider}
-                        placeholder="Description here"
-                      />
-                    </Stack>
+                    <h5>Subdoc GUID: {yListSubdoc?.guid}</h5>
+                    {yListSubdoc && (
+                      <>
+                        <Stack mt="lg" gap={0}>
+                          <b>Title</b>
+                          <Editor
+                            fragment={yListSubdoc.getXmlFragment(
+                              `title_${card.id}`
+                            )}
+                            provider={provider}
+                            placeholder="Title here"
+                          />
+                        </Stack>
+                        <Stack gap={0}>
+                          <b>Description</b>
+                          <Editor
+                            fragment={yListSubdoc.getXmlFragment(
+                              `description_${card.id}`
+                            )}
+                            provider={provider}
+                            placeholder="Description here"
+                          />
+                        </Stack>
+                      </>
+                    )}
                   </Card>
                 );
               })}
