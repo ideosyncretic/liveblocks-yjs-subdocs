@@ -56,7 +56,7 @@ const initialStorage = {
 };
 
 export default function DemoPage() {
-  const roomID = "my-kanban-board";
+  const roomID = "my-kanban-board-001";
 
   return (
     <RoomProvider
@@ -127,38 +127,43 @@ function App() {
     setDoc(yDoc);
     setProvider(yProvider);
 
-    yProvider.on("sync", () => {
-      setSynced(true); // Triggers a rerender. Subdocs wouldn't be able to be loaded in time for rendering otherwise
-    });
-
     // Initialize top-level shared fragment
     yDoc.get("title", Y.XmlFragment);
 
     // Create a top-level map to store subdocs
-    const yListsMap = yDoc.getMap("lists");
+    const yListsMap = yDoc.getMap<Y.Doc>("lists");
 
-    // Create subdocument for each List in Liveblocks Storage
-    lists?.forEach((list) => {
-      // Init List subdoc
-      const yListSubdoc = new Y.Doc();
+    yProvider.on("sync", () => {
+      setSynced(true); // Triggers a rerender. Subdocs wouldn't be able to be loaded in time for rendering otherwise
 
-      // yListsMap.set(list.id, yListSubdoc);
+      // Create subdocument for each List in Liveblocks Storage
+      lists?.forEach((list) => {
+        // Init List subdoc
+        const yListSubdoc = new Y.Doc();
 
-      // TODO: Should we take note of GUID in Liveblocks Storage? And then load it based on that reference
-      // // Doesn’t seem to work
-      // const subdocGuid = yListSubdoc.guid;
-      // yProvider.loadSubdoc(subdocGuid);
+        if (yListsMap.get(list.id) instanceof Y.Doc) {
+          console.log("Subdoc already exists:", yListsMap.get(list.id)?.guid);
+        } else {
+          // If the subdoc doesn't exist yet
+          yListsMap.set(list.id, yListSubdoc); // Add it to the map
+          console.log("Subdoc created:", yListSubdoc.guid);
+        }
 
-      // NOTE: OR should we just load it based on its reference?
-      // Doesn’t seem to work
-      // yListSubdoc.load();
+        // TODO: Should we take note of GUID in Liveblocks Storage? And then load it based on that reference
+        // // Doesn’t seem to work
+        // const subdocGuid = yListSubdoc.guid;
+        // yProvider.loadSubdoc(subdocGuid);
 
-      // NOTE: This doesn’t work for some reason, doesn’t trigger a load event. Only autoload works. Why?
-      // yProvider.loadSubdoc("8b772c15-57a1-49d7-a237-636e1e96a6e8");
-
-      console.log("Subdoc in useEffect:", yListSubdoc.guid);
+        // NOTE: OR should we just load it based on its reference?
+        // Doesn’t seem to work
+        // yListSubdoc.load();
+      });
     });
 
+    // NOTE: This doesn’t work for some reason, doesn’t trigger a load event. Only autoload works. Why?
+    // yProvider.loadSubdoc("8b772c15-57a1-49d7-a237-636e1e96a6e8");
+
+    // Listen for changes in subdocs and log their IDs
     yDoc.on("subdocs", ({ added, loaded, removed }) => {
       added.forEach((subdoc) => {
         console.log("Added subdoc", subdoc.guid);
