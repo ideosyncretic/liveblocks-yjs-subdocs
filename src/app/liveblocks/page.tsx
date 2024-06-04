@@ -1,3 +1,5 @@
+// Liveblocks example from: https://github.com/liveblocks/liveblocks/blob/main/e2e/next-sandbox/pages/ydoc/subdoc.tsx
+
 "use client";
 
 import type { BaseUserMeta } from "@liveblocks/core";
@@ -18,8 +20,7 @@ export default function Home() {
     <RoomProvider
       id={roomId}
       initialPresence={{} as never}
-      initialStorage={{} as never}
-    >
+      initialStorage={{} as never}>
       <Sandbox />
     </RoomProvider>
   );
