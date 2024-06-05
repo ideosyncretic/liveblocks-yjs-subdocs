@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { LiveList, LiveObject } from "@liveblocks/client";
 import { ClientSideSuspense } from "@liveblocks/react";
 import LiveblocksProvider from "@liveblocks/yjs";
-import { Stack, Card } from "@mantine/core";
+import { Stack, Card, Button } from "@mantine/core";
 import Collaboration from "@tiptap/extension-collaboration";
 import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
 import Document from "@tiptap/extension-document";
@@ -18,11 +18,13 @@ import Text from "@tiptap/extension-text";
 import { EditorContent, useEditor } from "@tiptap/react";
 import {
   RoomProvider,
+  useMutation,
   useRoom,
   useSelf,
   useStorage,
 } from "../../liveblocks.config";
 import * as Y from "yjs";
+import { createId } from "@paralleldrive/cuid2";
 
 const colors = [
   "#958DF1",
@@ -183,6 +185,49 @@ function App() {
     };
   }, [room, lists]);
 
+  const addCard = useMutation(
+    // Mutation context is passed as the first argument
+    ({ storage }, listId: string) => {
+      const lists = storage.get("lists");
+      const currentListIndex = lists.findIndex(
+        (value) => value.toObject().id === listId
+      );
+      const currentList = lists.get(currentListIndex);
+
+      const currentListOfCards = currentList?.get("cards");
+
+      const newCard = new LiveObject({
+        id: `card-${createId()}`,
+      });
+
+      currentListOfCards?.push(newCard);
+    },
+    []
+  );
+
+  const deleteCard = useMutation(
+    // Mutation context is passed as the first argument
+    ({ storage }, listId: string, cardToDeleteId: string) => {
+      const lists = storage.get("lists");
+
+      const currentListIndex = lists.findIndex(
+        (list) => list.toObject().id === listId
+      );
+      const currentList = lists.get(currentListIndex);
+
+      const currentListOfCards = currentList?.get("cards");
+
+      const cardToDeleteIndex = currentListOfCards?.findIndex(
+        (card) => card.toObject().id === cardToDeleteId
+      );
+
+      if (cardToDeleteIndex) {
+        currentListOfCards?.delete(cardToDeleteIndex);
+      }
+    },
+    []
+  );
+
   if (!doc || !provider) {
     return null;
   }
@@ -203,6 +248,7 @@ function App() {
             <Stack key={list.id}>
               <h2>List ID: {list.id}</h2>
 
+              <h5>Subdoc GUID: {yListSubdoc?.guid}</h5>
               <Stack gap={0}>
                 <h4>List Title</h4>
                 <Editor
@@ -217,7 +263,6 @@ function App() {
                 return (
                   <Card key={card.id} withBorder>
                     <h5>Card ID: {card.id}</h5>
-                    <h5>Subdoc GUID: {yListSubdoc?.guid}</h5>
                     {yListSubdoc && (
                       <>
                         <Stack mt="lg" gap={0}>
@@ -242,9 +287,17 @@ function App() {
                         </Stack>
                       </>
                     )}
+                    <Button
+                      onClick={() => deleteCard(list.id, card.id)}
+                      variant="filled"
+                      color="red">
+                      Remove
+                    </Button>
                   </Card>
                 );
               })}
+
+              <Button onClick={() => addCard(list.id)}>Add new</Button>
             </Stack>
           );
         })}

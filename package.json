@@ -14,6 +14,7 @@
     "@liveblocks/react": "^1.12.0",
     "@liveblocks/yjs": "^1.12.0",
     "@mantine/core": "^7.10.1",
+    "@paralleldrive/cuid2": "^2.2.2",
     "@tiptap/extension-collaboration": "^2.3.0",
     "@tiptap/extension-collaboration-cursor": "^2.3.0",
     "@tiptap/extension-document": "^2.3.0",
