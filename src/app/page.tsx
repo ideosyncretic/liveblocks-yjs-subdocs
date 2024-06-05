@@ -72,10 +72,33 @@ function App() {
     // Initialize top-level shared fragment
     yDoc.get("title", Y.XmlFragment);
 
-    // Create a top-level map to store subdocs
-    const yListsMap = yDoc.getMap<Y.Doc>("lists");
+    // Listen for changes in subdocs and log their IDs
+    yDoc.on("subdocs", ({ added, loaded, removed }) => {
+      added.forEach((subdoc) => {
+        console.log("Added subdoc", subdoc.guid);
+      });
+      loaded.forEach((subdoc) => {
+        console.log("Loaded subdoc", subdoc.guid);
+      });
+      removed.forEach((subdoc) => {
+        console.log("Removed subdoc", subdoc.guid);
+      });
+    });
 
-    yProvider.on("sync", () => {
+    return () => {
+      setSynced(false);
+      yDoc.destroy();
+      yProvider.destroy();
+    };
+  }, [room]);
+
+  useEffect(() => {
+    if (!doc || !provider) return;
+
+    // Create a top-level map to store subdocs
+    const yListsMap = doc.getMap<Y.Doc>("lists");
+
+    provider.on("sync", () => {
       setSynced(true); // Triggers a rerender. Subdocs wouldn't be able to be loaded in time for rendering otherwise
 
       // Create subdocument for each List in Liveblocks Storage
@@ -101,29 +124,7 @@ function App() {
         // yListSubdoc.load();
       });
     });
-
-    // NOTE: This doesn’t work for some reason, doesn’t trigger a load event. Only autoload works. Why?
-    // yProvider.loadSubdoc("8b772c15-57a1-49d7-a237-636e1e96a6e8");
-
-    // Listen for changes in subdocs and log their IDs
-    yDoc.on("subdocs", ({ added, loaded, removed }) => {
-      added.forEach((subdoc) => {
-        console.log("Added subdoc", subdoc.guid);
-      });
-      loaded.forEach((subdoc) => {
-        console.log("Loaded subdoc", subdoc.guid);
-      });
-      removed.forEach((subdoc) => {
-        console.log("Removed subdoc", subdoc.guid);
-      });
-    });
-
-    return () => {
-      setSynced(false);
-      yDoc?.destroy();
-      yProvider?.destroy();
-    };
-  }, [room, lists]);
+  }, [lists, doc, provider, room]);
 
   const addCard = useMutation(
     // Mutation context is passed as the first argument
