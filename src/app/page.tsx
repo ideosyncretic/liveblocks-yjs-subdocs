@@ -25,21 +25,7 @@ import {
 } from "../../liveblocks.config";
 import * as Y from "yjs";
 import { createId } from "@paralleldrive/cuid2";
-
-const colors = [
-  "#958DF1",
-  "#F98181",
-  "#FBBC88",
-  "#FAF594",
-  "#70CFF8",
-  "#94FADB",
-  "#B9F18D",
-];
-
-const getRandomElement = (list: string[]) =>
-  list[Math.floor(Math.random() * list.length)];
-
-const getRandomColor = () => getRandomElement(colors);
+import { getRandomColor } from "@/utils/CollaborationUtils";
 
 // Card
 const initialCard = new LiveObject({
