@@ -2,30 +2,20 @@
 
 import type { BaseUserMeta } from "@liveblocks/core";
 import { useEffect, useState } from "react";
-
-// import "./styles.css";
-
 import { LiveList, LiveObject } from "@liveblocks/client";
 import { ClientSideSuspense } from "@liveblocks/react";
 import LiveblocksProvider from "@liveblocks/yjs";
 import { Stack, Card, Button } from "@mantine/core";
-import Collaboration from "@tiptap/extension-collaboration";
-import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
-import Document from "@tiptap/extension-document";
-import Paragraph from "@tiptap/extension-paragraph";
-import Placeholder from "@tiptap/extension-placeholder";
-import Text from "@tiptap/extension-text";
-import { EditorContent, useEditor } from "@tiptap/react";
+
 import {
   RoomProvider,
   useMutation,
   useRoom,
-  useSelf,
   useStorage,
 } from "../../liveblocks.config";
 import * as Y from "yjs";
 import { createId } from "@paralleldrive/cuid2";
-import { getRandomColor } from "@/utils/CollaborationUtils";
+import Editor from "./Editor.component";
 
 // Card
 const initialCard = new LiveObject({
@@ -57,42 +47,6 @@ export default function DemoPage() {
     </RoomProvider>
   );
 }
-
-const Editor = ({
-  fragment,
-  placeholder,
-  provider,
-}: {
-  fragment: Y.XmlFragment;
-  placeholder: string;
-  provider: unknown;
-}) => {
-  const userInfo = useSelf((me) => me.info);
-
-  const editor = useEditor({
-    extensions: [
-      Document,
-      Paragraph,
-      Text,
-      Placeholder.configure({
-        placeholder: placeholder,
-      }),
-      Collaboration.configure({
-        fragment: fragment,
-      }),
-      CollaborationCursor.configure({
-        provider: provider,
-        user: { name: userInfo?.name, color: getRandomColor() },
-      }),
-    ],
-  });
-
-  return (
-    <div className="editor">
-      <EditorContent editor={editor} />
-    </div>
-  );
-};
 
 function App() {
   // const doc = useMemo(() => new Y.Doc(), []);
