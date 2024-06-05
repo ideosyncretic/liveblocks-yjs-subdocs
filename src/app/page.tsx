@@ -221,9 +221,11 @@ function App() {
         (card) => card.toObject().id === cardToDeleteId
       );
 
-      if (cardToDeleteIndex) {
-        currentListOfCards?.delete(cardToDeleteIndex);
+      if (typeof cardToDeleteIndex !== "number") {
+        return;
       }
+
+      currentListOfCards?.delete(cardToDeleteIndex);
     },
     []
   );
