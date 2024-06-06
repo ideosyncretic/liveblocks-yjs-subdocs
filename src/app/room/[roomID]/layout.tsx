@@ -5,7 +5,7 @@ import { RoomProvider } from "../../../../liveblocks.config";
 import { Button, Group, Select, Stack } from "@mantine/core";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createId } from "@paralleldrive/cuid2";
+import RoomSwitcher from "@/components/RoomSwitcher.component";
 
 export default function RootLayout({
   children,
@@ -46,23 +46,7 @@ export default function RootLayout({
       initialPresence={{}}
       initialStorage={initialStorage}>
       <Stack>
-        <Group align="center" flex={1} grow gap="xs" m="md">
-          <Select
-            placeholder="Switch room..."
-            value={roomID}
-            data={[
-              "my-kanban-board",
-              "my-kanban-board-001",
-              "my-kanban-board-002",
-            ]}
-            searchable
-            nothingFoundMessage="Nothing found..."
-            onChange={(value) => handleRoomChange(value ?? "")}
-          />
-          <Button component={Link} href={`/room/${createId()}`}>
-            New Board
-          </Button>
-        </Group>
+        <RoomSwitcher roomID={roomID} handleRoomChange={handleRoomChange} />
         {children}
       </Stack>
     </RoomProvider>
