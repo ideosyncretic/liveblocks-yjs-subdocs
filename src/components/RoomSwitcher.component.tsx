@@ -29,7 +29,7 @@ const RoomSwitcher = (props: { roomID?: string }) => {
     <Group align="center" flex={1} grow gap="xs" mb="md">
       <Select
         placeholder="Switch room..."
-        value={roomID ? roomID : ""}
+        value={roomID ?? ""}
         data={[
           "my-prompts-01",
           "my-prompts-02",
