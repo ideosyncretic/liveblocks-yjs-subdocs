@@ -17,8 +17,10 @@ const RoomSwitcher = (props: {
     setNewID(newID);
   }, []);
 
+  const NEW_BUTTON_TEXT = "New Prompt";
+
   return (
-    <Group align="center" flex={1} grow gap="xs" m="md">
+    <Group align="center" flex={1} grow gap="xs" mb="md">
       <Select
         placeholder="Switch room..."
         value={roomID}
@@ -29,10 +31,10 @@ const RoomSwitcher = (props: {
       />
       {newID ? (
         <Button component={Link} href={`/room/${newID}`}>
-          New Board
+          {NEW_BUTTON_TEXT}
         </Button>
       ) : (
-        <Button disabled>New Board</Button>
+        <Button disabled>{NEW_BUTTON_TEXT}</Button>
       )}
     </Group>
   );
