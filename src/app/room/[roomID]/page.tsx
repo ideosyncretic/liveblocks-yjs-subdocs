@@ -2,7 +2,7 @@
 
 import type { BaseUserMeta } from "@liveblocks/core";
 import { useEffect, useState } from "react";
-import { LiveList, LiveObject } from "@liveblocks/client";
+import { LiveObject } from "@liveblocks/client";
 import { ClientSideSuspense } from "@liveblocks/react";
 import LiveblocksProvider from "@liveblocks/yjs";
 import { Stack, Card, Button } from "@mantine/core";
