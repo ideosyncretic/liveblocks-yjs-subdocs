@@ -14,7 +14,7 @@ import {
 } from "../../../../liveblocks.config";
 import * as Y from "yjs";
 import { createId } from "@paralleldrive/cuid2";
-import Editor from "@/app/Editor.component";
+import Editor from "@/components/Editor.component";
 
 export default function DemoPage() {
   return (
