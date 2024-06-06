@@ -61,13 +61,13 @@ type Presence = {
   // ...
 };
 
-type Card = LiveObject<{
+type PromptTemplate = LiveObject<{
   id: string;
 }>;
 
-type List = LiveObject<{
+type PromptVersion = LiveObject<{
   id: string;
-  cards: LiveList<Card>;
+  promptTemplates: LiveList<PromptTemplate>;
 }>;
 
 // Optionally, Storage represents the shared document that persists in the
@@ -75,7 +75,7 @@ type List = LiveObject<{
 // LiveList, LiveMap, LiveObject instances, for which updates are
 // automatically persisted and synced to all connected clients.
 type Storage = {
-  lists: LiveList<List>;
+  promptVersions: LiveList<PromptVersion>;
 };
 
 // Optionally, UserMeta represents static/readonly metadata on each user, as

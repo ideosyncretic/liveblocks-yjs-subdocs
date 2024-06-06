@@ -13,6 +13,7 @@ import {
   useStorage,
   useStatus,
 } from "../../../../liveblocks.config";
+
 import * as Y from "yjs";
 import { createId } from "@paralleldrive/cuid2";
 import Editor from "@/components/Editor.component";
@@ -36,7 +37,7 @@ function App() {
   const [synced, setSynced] = useState(false);
 
   // Liveblocks Storage
-  const lists = useStorage((root) => root.lists);
+  const promptVersions = useStorage((root) => root.promptVersions);
 
   useEffect(() => {
     // Initialize Yjs and Liveblocks Provider
@@ -74,77 +75,82 @@ function App() {
     if (!doc || !provider) return;
 
     // Create a top-level map to store subdocs
-    const yListsMap = doc.getMap<Y.Doc>("lists");
+    const yPromptVersionsMap = doc.getMap<Y.Doc>("promptVersions");
 
     provider.on("sync", () => {
       setSynced(true); // Triggers a rerender. Subdocs wouldn't be able to be loaded in time for rendering otherwise
 
-      // Create subdocument for each List in Liveblocks Storage
-      lists?.forEach((list) => {
-        // Init List subdoc
-        const yListSubdoc = new Y.Doc();
+      // Create subdocument for each promptVersion in Liveblocks Storage
+      promptVersions?.forEach((promptVersion) => {
+        // Init promptVersion subdoc
+        const yPromptVersionSubdoc = new Y.Doc();
 
-        if (yListsMap.get(list.id) instanceof Y.Doc) {
-          console.log("Subdoc already exists:", yListsMap.get(list.id)?.guid);
+        if (yPromptVersionsMap.get(promptVersion.id) instanceof Y.Doc) {
+          console.log(
+            "Subdoc already exists:",
+            yPromptVersionsMap.get(promptVersion.id)?.guid
+          );
         } else {
           // If the subdoc doesn't exist yet
-          yListsMap.set(list.id, yListSubdoc); // Add it to the map
-          console.log("Subdoc created:", yListSubdoc.guid);
+          yPromptVersionsMap.set(promptVersion.id, yPromptVersionSubdoc); // Add it to the map
+
+          console.log("Subdoc created:", yPromptVersionSubdoc.guid);
         }
 
         // TODO: Should we take note of GUID in Liveblocks Storage? And then load it based on that reference
         // // Doesn’t seem to work
-        // const subdocGuid = yListSubdoc.guid;
+        // const subdocGuid = yPromptVersionSubdoc.guid;
         // yProvider.loadSubdoc(subdocGuid);
 
         // NOTE: OR should we just load it based on its reference?
         // Doesn’t seem to work
-        // yListSubdoc.load();
+        // yPromptVersionSubdoc.load();
       });
     });
-  }, [lists, doc, provider, room]);
+  }, [promptVersions, doc, provider, room]);
 
-  const addCard = useMutation(
+  const addTemplate = useMutation(
     // Mutation context is passed as the first argument
-    ({ storage }, listId: string) => {
-      const lists = storage.get("lists");
-      const currentListIndex = lists.findIndex(
-        (value) => value.toObject().id === listId
+    ({ storage }, versionId: string) => {
+      const promptVersions = storage.get("promptVersions");
+
+      const currentVersionIndex = promptVersions.findIndex(
+        (version) => version.toObject().id === versionId
       );
-      const currentList = lists.get(currentListIndex);
+      const currentVersion = promptVersions.get(currentVersionIndex);
 
-      const currentListOfCards = currentList?.get("cards");
+      const currentTemplates = currentVersion?.get("promptTemplates");
 
-      const newCard = new LiveObject({
-        id: `card-${createId()}`,
+      const newTemplate = new LiveObject({
+        id: `template-${createId()}`,
       });
 
-      currentListOfCards?.push(newCard);
+      currentTemplates?.push(newTemplate);
     },
     []
   );
 
-  const deleteCard = useMutation(
+  const deleteTemplate = useMutation(
     // Mutation context is passed as the first argument
-    ({ storage }, listId: string, cardToDeleteId: string) => {
-      const lists = storage.get("lists");
+    ({ storage }, versionId: string, templateToDeleteId: string) => {
+      const promptVersions = storage.get("promptVersions");
 
-      const currentListIndex = lists.findIndex(
-        (list) => list.toObject().id === listId
+      const currentVersionIndex = promptVersions.findIndex(
+        (version) => version.toObject().id === versionId
       );
-      const currentList = lists.get(currentListIndex);
+      const currentVersion = promptVersions.get(currentVersionIndex);
 
-      const currentListOfCards = currentList?.get("cards");
+      const currentTemplates = currentVersion?.get("promptTemplates");
 
-      const cardToDeleteIndex = currentListOfCards?.findIndex(
-        (card) => card.toObject().id === cardToDeleteId
+      const templateToDeleteIndex = currentTemplates?.findIndex(
+        (template) => template.toObject().id === templateToDeleteId
       );
 
-      if (typeof cardToDeleteIndex !== "number") {
+      if (typeof templateToDeleteIndex !== "number") {
         return;
       }
 
-      currentListOfCards?.delete(cardToDeleteIndex);
+      currentTemplates?.delete(templateToDeleteIndex);
     },
     []
   );
@@ -154,10 +160,12 @@ function App() {
   }
 
   // TODO Wait for subdocs to load and sync
-  const yListsMap = doc.getMap("lists");
-  console.log("yListsMap", yListsMap);
-  const yListSubdoc = yListsMap.get(lists[0].id) as Y.Doc | null;
-  console.log("Rendering subdoc:", yListSubdoc?.guid);
+  const yPromptVersionsMap = doc.getMap("promptVersions");
+  console.log("yPromptVersionsMap", yPromptVersionsMap);
+  const yPromptVersionSubdoc = yPromptVersionsMap.get(
+    promptVersions[0].id
+  ) as Y.Doc | null;
+  console.log("Rendering subdoc:", yPromptVersionSubdoc?.guid);
 
   return (
     <Stack>
@@ -169,13 +177,13 @@ function App() {
           Sync status: {synced ? "Synced" : "Syncing..."}
         </Text>
       </Stack>
-      {lists.map((list) => {
+      {promptVersions.map((promptVersion) => {
         return (
-          <Stack key={list.id}>
+          <Stack key={promptVersion.id}>
             <Stack mb="lg">
-              <h2>Version ID: {list.id}</h2>
+              <h2>Version ID: {promptVersion.id}</h2>
               <h6>
-                <pre>Subdoc GUID: {yListSubdoc?.guid}</pre>
+                <pre>Subdoc GUID: {yPromptVersionSubdoc?.guid}</pre>
               </h6>
             </Stack>
             <Stack gap={0}>
@@ -188,17 +196,17 @@ function App() {
             </Stack>
 
             <h4>Templates</h4>
-            {list.cards?.map((card) => {
+            {promptVersion.promptTemplates?.map((template) => {
               return (
-                <Card key={card.id} withBorder>
-                  <h5>Template ID: {card.id}</h5>
-                  {yListSubdoc && (
+                <Card key={template.id} withBorder>
+                  <h5>Template ID: {template.id}</h5>
+                  {yPromptVersionSubdoc && synced && (
                     <>
                       <Stack mt="lg" gap={0}>
                         <b>Title</b>
                         <Editor
-                          fragment={yListSubdoc.getXmlFragment(
-                            `title_${card.id}`
+                          fragment={yPromptVersionSubdoc.getXmlFragment(
+                            `title_${template.id}`
                           )}
                           provider={provider}
                           placeholder="Title here"
@@ -207,8 +215,8 @@ function App() {
                       <Stack gap={0}>
                         <b>Description</b>
                         <Editor
-                          fragment={yListSubdoc.getXmlFragment(
-                            `description_${card.id}`
+                          fragment={yPromptVersionSubdoc.getXmlFragment(
+                            `description_${template.id}`
                           )}
                           provider={provider}
                           placeholder="Description here"
@@ -217,7 +225,9 @@ function App() {
                     </>
                   )}
                   <Button
-                    onClick={() => deleteCard(list.id, card.id)}
+                    onClick={() =>
+                      deleteTemplate(promptVersion.id, template.id)
+                    }
                     variant="filled"
                     color="red">
                     Remove
@@ -226,7 +236,9 @@ function App() {
               );
             })}
 
-            <Button onClick={() => addCard(list.id)}>Add new template</Button>
+            <Button onClick={() => addTemplate(promptVersion.id)}>
+              Add new template
+            </Button>
           </Stack>
         );
       })}

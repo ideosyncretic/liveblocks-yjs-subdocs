@@ -29,8 +29,15 @@ const RoomSwitcher = (props: { roomID?: string }) => {
     <Group align="center" flex={1} grow gap="xs" mb="md">
       <Select
         placeholder="Switch room..."
-        data={["my-kanban-board", "my-kanban-board-001", "my-kanban-board-002"]}
         value={roomID ? roomID : ""}
+        data={[
+          "my-prompts-01",
+          "my-prompts-02",
+          "my-prompts-03",
+          "my-prompts-04",
+          "my-prompts-05",
+          "my-prompts-06",
+        ]}
         searchable
         nothingFoundMessage="Nothing found..."
         onChange={(value) => handleRoomChange(value)}

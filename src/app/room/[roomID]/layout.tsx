@@ -2,9 +2,8 @@
 
 import { LiveList, LiveObject } from "@liveblocks/client";
 import { RoomProvider } from "../../../../liveblocks.config";
-import { Button, Group, Select, Stack } from "@mantine/core";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Stack } from "@mantine/core";
+import { createId } from "@paralleldrive/cuid2";
 import RoomSwitcher from "@/components/RoomSwitcher.component";
 
 export default function RootLayout({
@@ -19,21 +18,19 @@ export default function RootLayout({
   const roomID = params.roomID;
 
   // Card
-  const initialCard = new LiveObject({
-    id: "card-1",
+  const initialTemplate = new LiveObject({
+    id: `template-${createId()}`,
   });
 
   // List
-  const initialList = new LiveObject({
-    id: "list-1",
-    cards: new LiveList([initialCard]),
+  const initialVersion = new LiveObject({
+    id: `version-${createId()}`,
+    promptTemplates: new LiveList([initialTemplate]),
   });
 
   // List
   const initialStorage = {
-    lists: new LiveList([initialList]),
-  };
-
+    promptVersions: new LiveList([initialVersion]),
   };
 
   return (
