@@ -11,6 +11,7 @@ import {
   useMutation,
   useRoom,
   useStorage,
+  useStatus,
 } from "../../../../liveblocks.config";
 import * as Y from "yjs";
 import { createId } from "@paralleldrive/cuid2";
@@ -31,6 +32,7 @@ function App() {
   const [provider, setProvider] =
     useState<LiveblocksProvider<never, never, BaseUserMeta, never>>();
 
+  const status = useStatus();
   const [synced, setSynced] = useState(false);
 
   // Liveblocks Storage
@@ -160,6 +162,8 @@ function App() {
   return (
     <main>
       <Stack mb="xl">
+        <p>Connection status: {status}</p>
+        <p>Sync status: {synced ? "Synced" : "Syncing..."}</p>
         {lists.map((list) => {
           return (
             <Stack key={list.id}>
