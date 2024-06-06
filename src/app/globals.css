@@ -79,6 +79,11 @@ main {
   margin: 1rem;
 }
 
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
 .tiptap {
   border: 1px solid #5e5e5e;
   padding: 8px;

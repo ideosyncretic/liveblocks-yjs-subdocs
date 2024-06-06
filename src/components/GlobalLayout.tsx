@@ -1,6 +1,7 @@
 "use client";
 
 import { AppShell, Group, Title, rem } from "@mantine/core";
+import Link from "next/link";
 
 export default function GlobalLayout({
   children,
@@ -13,9 +14,11 @@ export default function GlobalLayout({
     <AppShell header={{ height: HEIGHT, offset: false }} padding="sm">
       <AppShell.Header>
         <Group h="100%" px="sm">
-          <Title order={1} size="h5">
-            My Prompts
-          </Title>
+          <Link href="/">
+            <Title order={1} size="h5">
+              My Prompts
+            </Title>
+          </Link>
         </Group>
       </AppShell.Header>
 
