@@ -34,10 +34,6 @@ export default function RootLayout({
     lists: new LiveList([initialList]),
   };
 
-  const router = useRouter();
-
-  const handleRoomChange = (selectedRoom: string) => {
-    router.push(`/room/${selectedRoom}`);
   };
 
   return (
@@ -46,7 +42,7 @@ export default function RootLayout({
       initialPresence={{}}
       initialStorage={initialStorage}>
       <Stack>
-        <RoomSwitcher roomID={roomID} handleRoomChange={handleRoomChange} />
+        <RoomSwitcher roomID={roomID} />
         {children}
       </Stack>
     </RoomProvider>
