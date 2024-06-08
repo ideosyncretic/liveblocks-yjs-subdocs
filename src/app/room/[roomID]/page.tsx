@@ -36,8 +36,13 @@ function App() {
   const status = useStatus();
   const [synced, setSynced] = useState(false);
 
+  const [fragmentsCreated, setFragmentsCreated] = useState(false);
+
   // Liveblocks Storage
   const promptVersions = useStorage((root) => root.promptVersions);
+  const promptTemplates = useStorage((root) =>
+    root.promptVersions.map((v) => v.promptTemplates)
+  );
 
   useEffect(() => {
     // Initialize Yjs and Liveblocks Provider
@@ -109,6 +114,65 @@ function App() {
     });
   }, [promptVersions, doc, provider, room]);
 
+  useEffect(() => {
+    if (!doc || !provider) return;
+
+    const yPromptVersionsMap = doc.getMap("promptVersions");
+
+    const yPromptVersionSubdoc = yPromptVersionsMap.get(
+      promptVersions[0].id // TODO: Convert hardcoded version to dynamically-selected version
+    ) as Y.Doc | null;
+
+    if (!yPromptVersionSubdoc) {
+      console.log("Subdoc doesn't exist yet");
+      return;
+    }
+
+    const yPromptTemplatesMap =
+      yPromptVersionSubdoc.getMap<Y.XmlFragment>("promptTemplates");
+
+    promptVersions.map((promptVersion) => {
+      promptVersion.promptTemplates?.map((template) => {
+        console.log("🔥 yPromptTemplatesMap", yPromptTemplatesMap);
+        console.log("🔥 yPromptTemplatesMap.size", yPromptTemplatesMap.size);
+        console.log("🔥 `title_${template.id}`", `title_${template.id}`);
+        console.log(
+          "🔥 yPromptTemplatesMap?.has(`title_${template.id}`",
+          yPromptTemplatesMap?.has(`title_${template.id}`)
+        );
+
+        if (yPromptTemplatesMap?.has(`title_${template.id}`)) {
+          console.log(`Title already exists for ${template.id}`);
+        } else {
+          yPromptTemplatesMap?.set(`title_${template.id}`, new Y.XmlFragment());
+          console.log(
+            `Created new title fragment for ${template.id}`,
+            yPromptTemplatesMap?.get(`title_${template.id}`)
+          );
+        }
+
+        if (yPromptTemplatesMap?.has(`description_${template.id}`)) {
+          console.log(`Description already exists for ${template.id}`);
+        } else {
+          yPromptTemplatesMap?.set(
+            `description_${template.id}`,
+            new Y.XmlFragment()
+          );
+          console.log(
+            `Created new description fragment for ${template.id}`,
+            yPromptTemplatesMap?.get(`description_${template.id}`)
+          );
+        }
+      });
+
+      setFragmentsCreated(true);
+    });
+
+    return () => {
+      setFragmentsCreated(false);
+    };
+  }, [doc, provider, promptVersions, synced]);
+
   const addTemplate = useMutation(
     // Mutation context is passed as the first argument
     ({ storage }, versionId: string) => {
@@ -163,9 +227,12 @@ function App() {
   const yPromptVersionsMap = doc.getMap("promptVersions");
   console.log("yPromptVersionsMap", yPromptVersionsMap);
   const yPromptVersionSubdoc = yPromptVersionsMap.get(
-    promptVersions[0].id
+    promptVersions[0].id // TODO: Convert hardcoded version to dynamically-selected version
   ) as Y.Doc | null;
   console.log("Rendering subdoc:", yPromptVersionSubdoc?.guid);
+
+  const yPromptTemplatesMap =
+    yPromptVersionSubdoc?.getMap<Y.XmlFragment>("promptTemplates");
 
   return (
     <Stack>
@@ -197,12 +264,26 @@ function App() {
 
             <h4>Templates</h4>
             {promptVersion.promptTemplates?.map((template) => {
+              yPromptTemplatesMap &&
+                console.log("yPromptTemplatesMap", yPromptTemplatesMap);
+
+              const titleFragment = yPromptTemplatesMap?.get(
+                `title_${template.id}`
+              );
+
+              const descriptionFragment = yPromptTemplatesMap?.get(
+                `description_${template.id}`
+              );
+
               return (
                 <Card key={template.id} withBorder>
                   <h5>Template ID: {template.id}</h5>
-                  {yPromptVersionSubdoc && synced && (
-                    <>
-                      <Stack mt="lg" gap={0}>
+                  {yPromptVersionSubdoc &&
+                    synced &&
+                    fragmentsCreated &&
+                    yPromptTemplatesMap && (
+                      <>
+                        {/* <Stack mt="lg" gap={0}>
                         <b>Title</b>
                         <Editor
                           fragment={yPromptVersionSubdoc.getXmlFragment(
@@ -221,9 +302,30 @@ function App() {
                           provider={provider}
                           placeholder="Description here"
                         />
-                      </Stack>
-                    </>
-                  )}
+                      </Stack> */}
+
+                        <Stack mt="lg" gap={0}>
+                          <b>Title</b>
+                          {titleFragment && (
+                            <Editor
+                              fragment={titleFragment}
+                              provider={provider}
+                              placeholder="Title here"
+                            />
+                          )}
+                        </Stack>
+                        <Stack gap={0}>
+                          <b>Description</b>
+                          {descriptionFragment && (
+                            <Editor
+                              fragment={descriptionFragment}
+                              provider={provider}
+                              placeholder="Description here"
+                            />
+                          )}
+                        </Stack>
+                      </>
+                    )}
                   <Button
                     onClick={() =>
                       deleteTemplate(promptVersion.id, template.id)
