@@ -36,7 +36,8 @@ function App() {
   const status = useStatus();
   const [synced, setSynced] = useState(false);
 
-  const [fragmentsCreated, setFragmentsCreated] = useState(false);
+  const [promptTemplatesMapSynced, setPromptTemplatesMapSynced] =
+    useState<Y.Map<Y.XmlFragment>>();
 
   // Liveblocks Storage
   const promptVersions = useStorage((root) => root.promptVersions);
@@ -118,10 +119,8 @@ function App() {
     if (!doc || !provider) return;
 
     provider.on("sync", (isSynced: boolean) => {
-      if (isSynced === true) {
-        console.log("Provider is Synced");
-      } else {
-        console.log("Provider is Not synced");
+      if (isSynced === false) {
+        return;
       }
 
       const yPromptVersionsMap = doc.getMap("promptVersions");
@@ -137,6 +136,17 @@ function App() {
 
       const yPromptTemplatesMap =
         yPromptVersionSubdoc.getMap<Y.XmlFragment>("promptTemplates");
+
+      yPromptVersionSubdoc
+        .getMap<Y.XmlFragment>("promptTemplates")
+        .observeDeep((event) => {
+          const yPromptTemplates =
+            yPromptVersionSubdoc.getMap<Y.XmlFragment>("promptTemplates");
+
+          console.log("yPromptTemplates.size", yPromptTemplates.size);
+
+          setPromptTemplatesMapSynced(yPromptTemplates);
+        });
 
       promptVersions.map((promptVersion) => {
         promptVersion.promptTemplates?.map((template) => {
@@ -209,14 +219,10 @@ function App() {
           //   yPromptTemplatesMap?.get(`title_${template.id}`)
           // );
         });
-
-        setFragmentsCreated(true);
       });
     });
 
-    return () => {
-      setFragmentsCreated(false);
-    };
+    return () => {};
   }, [doc, provider, promptVersions, synced]);
 
   const addTemplate = useMutation(
@@ -277,8 +283,12 @@ function App() {
   ) as Y.Doc | null;
   console.log("Rendering subdoc:", yPromptVersionSubdoc?.guid);
 
-  const yPromptTemplatesMap =
-    yPromptVersionSubdoc?.getMap<Y.XmlFragment>("promptTemplates");
+  console.log("🔄 promptTemplatesMapSynced", promptTemplatesMapSynced);
+
+  console.log(
+    "🔄 promptTemplatesMapSynced size",
+    promptTemplatesMapSynced?.size
+  );
 
   return (
     <Stack>
@@ -309,26 +319,22 @@ function App() {
             </Stack>
 
             <h4>Templates</h4>
-            {promptVersion.promptTemplates?.map((template) => {
-              let titleFragment;
-              let descriptionFragment;
-              yPromptTemplatesMap?.observe(() => {
-                titleFragment = yPromptTemplatesMap?.get(
+            {promptTemplatesMapSynced &&
+              promptVersion.promptTemplates?.map((template) => {
+                let titleFragment = promptTemplatesMapSynced?.get(
                   `title_${template.id}`
                 );
+                console.log("titleFragment", titleFragment);
 
-                descriptionFragment = yPromptTemplatesMap?.get(
+                let descriptionFragment = promptTemplatesMapSynced?.get(
                   `description_${template.id}`
                 );
-              });
+                console.log("descriptionFragment", descriptionFragment);
 
-              return (
-                <Card key={template.id} withBorder>
-                  <h5>Template ID: {template.id}</h5>
-                  {yPromptVersionSubdoc &&
-                    synced &&
-                    fragmentsCreated &&
-                    yPromptTemplatesMap && (
+                return (
+                  <Card key={template.id} withBorder>
+                    <h5>Template ID: {template.id}</h5>
+                    {yPromptVersionSubdoc && synced && (
                       <>
                         <Stack mt="lg" gap={0}>
                           <b>Title</b>
@@ -352,17 +358,17 @@ function App() {
                         </Stack>
                       </>
                     )}
-                  <Button
-                    onClick={() =>
-                      deleteTemplate(promptVersion.id, template.id)
-                    }
-                    variant="filled"
-                    color="red">
-                    Remove
-                  </Button>
-                </Card>
-              );
-            })}
+                    <Button
+                      onClick={() =>
+                        deleteTemplate(promptVersion.id, template.id)
+                      }
+                      variant="filled"
+                      color="red">
+                      Remove
+                    </Button>
+                  </Card>
+                );
+              })}
 
             <Button onClick={() => addTemplate(promptVersion.id)}>
               Add new template
