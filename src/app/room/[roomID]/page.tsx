@@ -177,6 +177,16 @@ function App() {
           Sync status: {synced ? "Synced" : "Syncing..."}
         </Text>
       </Stack>
+
+      <Stack gap={0}>
+        <h4>Prompt Title</h4>
+        <Editor
+          fragment={doc.get("title") as Y.XmlFragment}
+          provider={provider}
+          placeholder="Title here"
+        />
+      </Stack>
+
       {promptVersions.map((promptVersion) => {
         return (
           <Stack key={promptVersion.id}>
@@ -188,11 +198,11 @@ function App() {
             </Stack>
             <Stack gap={0}>
               <h4>Version Title</h4>
-              <Editor
+              {/* <Editor
                 fragment={doc.get("title") as Y.XmlFragment}
                 provider={provider}
                 placeholder="Title here"
-              />
+              /> */}
             </Stack>
 
             <h4>Templates</h4>
