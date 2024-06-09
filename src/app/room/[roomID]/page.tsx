@@ -160,11 +160,9 @@ function App() {
   }
 
   // TODO Wait for subdocs to load and sync
-  const yPromptVersionsMap = doc.getMap("promptVersions");
+  const yPromptVersionsMap = doc.getMap<Y.Doc>("promptVersions");
   console.log("yPromptVersionsMap", yPromptVersionsMap);
-  const yPromptVersionSubdoc = yPromptVersionsMap.get(
-    promptVersions[0].id
-  ) as Y.Doc | null;
+  const yPromptVersionSubdoc = yPromptVersionsMap.get(promptVersions[0].id);
   console.log("Rendering subdoc:", yPromptVersionSubdoc?.guid);
 
   return (
@@ -187,71 +185,73 @@ function App() {
         />
       </Stack>
 
-      {promptVersions.map((promptVersion) => {
-        return (
-          <Stack key={promptVersion.id}>
-            <Stack mb="lg">
-              <h2>Version ID: {promptVersion.id}</h2>
-              <h6>
-                <pre>Subdoc GUID: {yPromptVersionSubdoc?.guid}</pre>
-              </h6>
-            </Stack>
-            <Stack gap={0}>
-              <h4>Version Title</h4>
-              {/* <Editor
-                fragment={doc.get("title") as Y.XmlFragment}
-                provider={provider}
-                placeholder="Title here"
-              /> */}
-            </Stack>
+      {yPromptVersionSubdoc &&
+        synced &&
+        promptVersions.map((promptVersion) => {
+          return (
+            <Stack key={promptVersion.id}>
+              <Stack mb="lg">
+                <h2>Version ID: {promptVersion.id}</h2>
+                <h6>
+                  <pre>Subdoc GUID: {yPromptVersionSubdoc?.guid}</pre>
+                </h6>
+              </Stack>
+              <Stack gap={0}>
+                <h4>Version Title</h4>
+                <Editor
+                  fragment={yPromptVersionSubdoc?.getXmlFragment("title")}
+                  provider={provider}
+                  placeholder="Title here"
+                />
+              </Stack>
 
-            <h4>Templates</h4>
-            {promptVersion.promptTemplates?.map((template) => {
-              return (
-                <Card key={template.id} withBorder>
-                  <h5>Template ID: {template.id}</h5>
-                  {yPromptVersionSubdoc && synced && (
-                    <>
-                      <Stack mt="lg" gap={0}>
-                        <b>Title</b>
-                        <Editor
-                          fragment={yPromptVersionSubdoc.getXmlFragment(
-                            `title_${template.id}`
-                          )}
-                          provider={provider}
-                          placeholder="Title here"
-                        />
-                      </Stack>
-                      <Stack gap={0}>
-                        <b>Description</b>
-                        <Editor
-                          fragment={yPromptVersionSubdoc.getXmlFragment(
-                            `description_${template.id}`
-                          )}
-                          provider={provider}
-                          placeholder="Description here"
-                        />
-                      </Stack>
-                    </>
-                  )}
-                  <Button
-                    onClick={() =>
-                      deleteTemplate(promptVersion.id, template.id)
+              <h4>Templates</h4>
+              {promptVersion.promptTemplates?.map((template) => {
+                return (
+                  <Card key={template.id} withBorder>
+                    <h5>Template ID: {template.id}</h5>
+                    {
+                      <>
+                        <Stack mt="lg" gap={0}>
+                          <b>Title</b>
+                          <Editor
+                            fragment={yPromptVersionSubdoc.getXmlFragment(
+                              `title_${template.id}`
+                            )}
+                            provider={provider}
+                            placeholder="Title here"
+                          />
+                        </Stack>
+                        <Stack gap={0}>
+                          <b>Description</b>
+                          <Editor
+                            fragment={yPromptVersionSubdoc.getXmlFragment(
+                              `description_${template.id}`
+                            )}
+                            provider={provider}
+                            placeholder="Description here"
+                          />
+                        </Stack>
+                      </>
                     }
-                    variant="filled"
-                    color="red">
-                    Remove
-                  </Button>
-                </Card>
-              );
-            })}
+                    <Button
+                      onClick={() =>
+                        deleteTemplate(promptVersion.id, template.id)
+                      }
+                      variant="filled"
+                      color="red">
+                      Remove
+                    </Button>
+                  </Card>
+                );
+              })}
 
-            <Button onClick={() => addTemplate(promptVersion.id)}>
-              Add new template
-            </Button>
-          </Stack>
-        );
-      })}
+              <Button onClick={() => addTemplate(promptVersion.id)}>
+                Add new template
+              </Button>
+            </Stack>
+          );
+        })}
     </Stack>
   );
 }
