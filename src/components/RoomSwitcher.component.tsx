@@ -30,14 +30,7 @@ const RoomSwitcher = (props: { roomID?: string }) => {
       <Select
         placeholder="Switch room..."
         value={roomID ?? ""}
-        data={[
-          "my-prompts-01",
-          "my-prompts-02",
-          "my-prompts-03",
-          "my-prompts-04",
-          "my-prompts-05",
-          "my-prompts-06",
-        ]}
+        data={["template-fragments-in-toplevel-ymap-in-version-subdoc-001"]}
         searchable
         nothingFoundMessage="Nothing found..."
         onChange={(value) => handleRoomChange(value)}

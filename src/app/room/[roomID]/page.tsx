@@ -117,55 +117,101 @@ function App() {
   useEffect(() => {
     if (!doc || !provider) return;
 
-    const yPromptVersionsMap = doc.getMap("promptVersions");
+    provider.on("sync", (isSynced: boolean) => {
+      if (isSynced === true) {
+        console.log("Provider is Synced");
+      } else {
+        console.log("Provider is Not synced");
+      }
 
-    const yPromptVersionSubdoc = yPromptVersionsMap.get(
-      promptVersions[0].id // TODO: Convert hardcoded version to dynamically-selected version
-    ) as Y.Doc | null;
+      const yPromptVersionsMap = doc.getMap("promptVersions");
 
-    if (!yPromptVersionSubdoc) {
-      console.log("Subdoc doesn't exist yet");
-      return;
-    }
+      const yPromptVersionSubdoc = yPromptVersionsMap.get(
+        promptVersions[0].id // TODO: Convert hardcoded version to dynamically-selected version
+      ) as Y.Doc | null;
 
-    const yPromptTemplatesMap =
-      yPromptVersionSubdoc.getMap<Y.XmlFragment>("promptTemplates");
+      if (!yPromptVersionSubdoc) {
+        console.log("Subdoc doesn't exist yet");
+        return;
+      }
 
-    promptVersions.map((promptVersion) => {
-      promptVersion.promptTemplates?.map((template) => {
-        console.log("🔥 yPromptTemplatesMap", yPromptTemplatesMap);
-        console.log("🔥 yPromptTemplatesMap.size", yPromptTemplatesMap.size);
-        console.log("🔥 `title_${template.id}`", `title_${template.id}`);
-        console.log(
-          "🔥 yPromptTemplatesMap?.has(`title_${template.id}`",
-          yPromptTemplatesMap?.has(`title_${template.id}`)
-        );
+      const yPromptTemplatesMap =
+        yPromptVersionSubdoc.getMap<Y.XmlFragment>("promptTemplates");
 
-        if (yPromptTemplatesMap?.has(`title_${template.id}`)) {
-          console.log(`Title already exists for ${template.id}`);
-        } else {
-          yPromptTemplatesMap?.set(`title_${template.id}`, new Y.XmlFragment());
-          console.log(
-            `Created new title fragment for ${template.id}`,
-            yPromptTemplatesMap?.get(`title_${template.id}`)
-          );
-        }
+      promptVersions.map((promptVersion) => {
+        promptVersion.promptTemplates?.map((template) => {
+          yPromptTemplatesMap?.observe((event) => {
+            console.log(
+              "❓ yPromptTemplatesMap?.has(`title_${template.id}`",
+              yPromptTemplatesMap?.has(`title_${template.id}`)
+            );
+            console.log(
+              "❓ yPromptTemplatesMap?.has(`description_${template.id}`",
+              yPromptTemplatesMap?.has(`title_${template.id}`)
+            );
 
-        if (yPromptTemplatesMap?.has(`description_${template.id}`)) {
-          console.log(`Description already exists for ${template.id}`);
-        } else {
-          yPromptTemplatesMap?.set(
-            `description_${template.id}`,
-            new Y.XmlFragment()
-          );
-          console.log(
-            `Created new description fragment for ${template.id}`,
-            yPromptTemplatesMap?.get(`description_${template.id}`)
-          );
-        }
+            // if (yPromptTemplatesMap?.has(`title_${template.id}`)) {
+            if (
+              yPromptTemplatesMap
+                ?.toJSON()
+                .hasOwnProperty(`title_${template.id}`)
+            ) {
+              console.log(`Title already exists for ${template.id}`);
+            } else {
+              // Set a new title fragment
+              yPromptTemplatesMap?.set(
+                `title_${template.id}`,
+                new Y.XmlFragment()
+              );
+              console.log(
+                `➕ Created new title fragment for ${template.id}`,
+                yPromptTemplatesMap?.get(`title_${template.id}`)
+              );
+              console.log("🔥 yPromptTemplatesMap", yPromptTemplatesMap);
+              console.log(
+                "🔥 yPromptTemplatesMap.size",
+                yPromptTemplatesMap.size
+              );
+              console.log(
+                "yPromptTemplatesMap?.has(`title_${template.id}`",
+                yPromptTemplatesMap?.has(`title_${template.id}`)
+              );
+            }
+
+            // if (yPromptTemplatesMap?.has(`description_${template.id}`)) {
+            if (
+              yPromptTemplatesMap
+                ?.toJSON()
+                .hasOwnProperty(`description_${template.id}`)
+            ) {
+              console.log(`Description already exists for ${template.id}`);
+            } else {
+              // Set a new description fragment
+              yPromptTemplatesMap?.set(
+                `description_${template.id}`,
+                new Y.XmlFragment()
+              );
+              console.log(
+                `➕ Created new description fragment for ${template.id}`,
+                yPromptTemplatesMap?.get(`description_${template.id}`)
+              );
+            }
+          });
+
+          // console.log("❓ yPromptTemplatesMap", yPromptTemplatesMap);
+          // console.log("❓ yPromptTemplatesMap.size", yPromptTemplatesMap.size);
+          // console.log(
+          //   "❓ yPromptTemplatesMap?.has(`title_${template.id}`",
+          //   yPromptTemplatesMap?.has(`title_${template.id}`)
+          // );
+          // console.log(
+          //   "❓ yPromptTemplatesMap?.get(`title_${template.id}`",
+          //   yPromptTemplatesMap?.get(`title_${template.id}`)
+          // );
+        });
+
+        setFragmentsCreated(true);
       });
-
-      setFragmentsCreated(true);
     });
 
     return () => {
@@ -225,7 +271,7 @@ function App() {
 
   // TODO Wait for subdocs to load and sync
   const yPromptVersionsMap = doc.getMap("promptVersions");
-  console.log("yPromptVersionsMap", yPromptVersionsMap);
+
   const yPromptVersionSubdoc = yPromptVersionsMap.get(
     promptVersions[0].id // TODO: Convert hardcoded version to dynamically-selected version
   ) as Y.Doc | null;
@@ -264,16 +310,17 @@ function App() {
 
             <h4>Templates</h4>
             {promptVersion.promptTemplates?.map((template) => {
-              yPromptTemplatesMap &&
-                console.log("yPromptTemplatesMap", yPromptTemplatesMap);
+              let titleFragment;
+              let descriptionFragment;
+              yPromptTemplatesMap?.observe(() => {
+                titleFragment = yPromptTemplatesMap?.get(
+                  `title_${template.id}`
+                );
 
-              const titleFragment = yPromptTemplatesMap?.get(
-                `title_${template.id}`
-              );
-
-              const descriptionFragment = yPromptTemplatesMap?.get(
-                `description_${template.id}`
-              );
+                descriptionFragment = yPromptTemplatesMap?.get(
+                  `description_${template.id}`
+                );
+              });
 
               return (
                 <Card key={template.id} withBorder>
@@ -283,27 +330,6 @@ function App() {
                     fragmentsCreated &&
                     yPromptTemplatesMap && (
                       <>
-                        {/* <Stack mt="lg" gap={0}>
-                        <b>Title</b>
-                        <Editor
-                          fragment={yPromptVersionSubdoc.getXmlFragment(
-                            `title_${template.id}`
-                          )}
-                          provider={provider}
-                          placeholder="Title here"
-                        />
-                      </Stack>
-                      <Stack gap={0}>
-                        <b>Description</b>
-                        <Editor
-                          fragment={yPromptVersionSubdoc.getXmlFragment(
-                            `description_${template.id}`
-                          )}
-                          provider={provider}
-                          placeholder="Description here"
-                        />
-                      </Stack> */}
-
                         <Stack mt="lg" gap={0}>
                           <b>Title</b>
                           {titleFragment && (
