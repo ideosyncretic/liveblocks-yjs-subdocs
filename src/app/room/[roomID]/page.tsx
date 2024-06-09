@@ -30,7 +30,11 @@ function App() {
   // const doc = useMemo(() => new Y.Doc(), []);
   const room = useRoom();
   const [doc, setDoc] = useState<Y.Doc>();
-  const [provider, setProvider] =
+
+  const [rootDocProvider, setRootDocProvider] =
+    useState<LiveblocksProvider<never, never, BaseUserMeta, never>>();
+
+  const [subDocProvider, setSubDocProvider] =
     useState<LiveblocksProvider<never, never, BaseUserMeta, never>>();
 
   const status = useStatus();
@@ -41,18 +45,23 @@ function App() {
 
   // Liveblocks Storage
   const promptVersions = useStorage((root) => root.promptVersions);
-  const promptTemplates = useStorage((root) =>
-    root.promptVersions.map((v) => v.promptTemplates)
-  );
 
   useEffect(() => {
     // Initialize Yjs and Liveblocks Provider
     const yDoc = new Y.Doc();
-    const yProvider = new LiveblocksProvider(room, yDoc, {
+
+    const yRootDocProvider = new LiveblocksProvider(room, yDoc, {
+      autoloadSubdocs: false,
+    });
+
+    const ySubDocProvider = new LiveblocksProvider(room, yDoc, {
       autoloadSubdocs: true,
     });
+
     setDoc(yDoc);
-    setProvider(yProvider);
+
+    setRootDocProvider(yRootDocProvider);
+    setSubDocProvider(ySubDocProvider);
 
     // Initialize top-level shared fragment
     yDoc.get("title", Y.XmlFragment);
@@ -73,17 +82,17 @@ function App() {
     return () => {
       setSynced(false);
       yDoc.destroy();
-      yProvider.destroy();
+      ySubDocProvider.destroy();
     };
   }, [room]);
 
   useEffect(() => {
-    if (!doc || !provider) return;
+    if (!doc || !subDocProvider) return;
 
     // Create a top-level map to store subdocs
     const yPromptVersionsMap = doc.getMap<Y.Doc>("promptVersions");
 
-    provider.on("sync", () => {
+    subDocProvider.on("sync", () => {
       setSynced(true); // Triggers a rerender. Subdocs wouldn't be able to be loaded in time for rendering otherwise
 
       // Create subdocument for each promptVersion in Liveblocks Storage
@@ -113,12 +122,12 @@ function App() {
         // yPromptVersionSubdoc.load();
       });
     });
-  }, [promptVersions, doc, provider, room]);
+  }, [promptVersions, doc, subDocProvider, room]);
 
   useEffect(() => {
-    if (!doc || !provider) return;
+    if (!doc || !subDocProvider) return;
 
-    provider.on("sync", (isSynced: boolean) => {
+    subDocProvider.on("sync", (isSynced: boolean) => {
       if (isSynced === false) {
         return;
       }
@@ -223,7 +232,7 @@ function App() {
     });
 
     return () => {};
-  }, [doc, provider, promptVersions, synced]);
+  }, [doc, subDocProvider, promptVersions, synced]);
 
   const addTemplate = useMutation(
     // Mutation context is passed as the first argument
@@ -271,7 +280,7 @@ function App() {
     []
   );
 
-  if (!doc || !provider) {
+  if (!doc || !subDocProvider) {
     return null;
   }
 
@@ -313,7 +322,7 @@ function App() {
               <h4>Version Title</h4>
               <Editor
                 fragment={doc.get("title") as Y.XmlFragment}
-                provider={provider}
+                provider={rootDocProvider}
                 placeholder="Title here"
               />
             </Stack>
@@ -341,7 +350,7 @@ function App() {
                           {titleFragment && (
                             <Editor
                               fragment={titleFragment}
-                              provider={provider}
+                              provider={subDocProvider}
                               placeholder="Title here"
                             />
                           )}
@@ -351,7 +360,7 @@ function App() {
                           {descriptionFragment && (
                             <Editor
                               fragment={descriptionFragment}
-                              provider={provider}
+                              provider={subDocProvider}
                               placeholder="Description here"
                             />
                           )}
